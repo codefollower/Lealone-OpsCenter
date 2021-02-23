@@ -19,13 +19,13 @@ package org.lealone.opscenter.test;
 
 import java.io.IOException;
 
-import org.lealone.opscenter.web.thymeleaf.ThymeleafTemplateCompiler;
+import org.lealone.server.template.TemplateCompiler;
 
 public class OpsCenterTemplateCompilerTest {
 
     public static void main(String[] args) throws IOException {
         args = new String[] { "-webRoot", "../opscenter-web/web" };
-        ThymeleafTemplateCompiler.main(args);
+        TemplateCompiler.main(args);
     }
 
 }

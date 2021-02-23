@@ -57,6 +57,13 @@ class ServiceSession {
 
     private final ArrayList<String> commandHistory;
 
+    final ArrayList<String> columnNames = new ArrayList<>();
+    final ArrayList<ArrayList<String>> rows = new ArrayList<>();
+    String queryInfo;
+
+    final ArrayList<TableInfo> tableList = new ArrayList<>();
+    final ArrayList<NodeInfo> nodeList = new ArrayList<>();
+
     private Connection conn;
     private DatabaseMetaData meta;
     private DbContents contents = new DbContents();
@@ -69,6 +76,18 @@ class ServiceSession {
         // Otherwise, one client could allow
         // saving history for others (insecure).
         this.commandHistory = server.getCommandHistoryList();
+    }
+
+    void addTable(String name, String columns, int id) {
+        tableList.add(new TableInfo(id, name, columns));
+    }
+
+    void addNode(int id, int level, int type, String icon, String text) {
+        addNode(id, level, type, icon, text, null);
+    }
+
+    void addNode(int id, int level, int type, String icon, String text, String link) {
+        nodeList.add(new NodeInfo(id, level, type, icon, text, link));
     }
 
     /**
@@ -92,6 +111,14 @@ class ServiceSession {
             return server.getSessions();
         }
         return map.get(key);
+    }
+
+    String i18n(String key) {
+        if (key.startsWith("text."))
+            key = key.substring(5);
+        @SuppressWarnings("unchecked")
+        HashMap<String, Object> m = (HashMap<String, Object>) map.get("text");
+        return m.get(key).toString();
     }
 
     /**

@@ -19,6 +19,7 @@ package org.lealone.opscenter.service;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -36,7 +37,8 @@ import org.lealone.opscenter.service.generated.OpsService;
 import org.lealone.orm.json.JsonArray;
 import org.lealone.orm.json.JsonObject;
 
-public class OpsServiceImpl implements OpsService {
+public class OpsServiceImpl extends ServiceImpl implements OpsService {
+
     static final String[][] LANGUAGES = { //
             { "cs", "\u010ce\u0161tina" }, //
             { "de", "Deutsch" }, //
@@ -122,9 +124,27 @@ public class OpsServiceImpl implements OpsService {
         prop.setProperty("user", user);
         prop.setProperty("password", password);
         try {
-            DriverManager.getConnection(url, prop);
+            Connection conn = DriverManager.getConnection(url, prop);
+            ServiceSession session = ServiceConfig.instance.createNewSession(null);
+            session.setConnection(conn);
+            session.put("url", url);
+            return session.get("sessionId").toString();
         } catch (SQLException e) {
             throw new RuntimeException("failed to login: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public String logout(String jsessionid) {
+        ServiceSession session = ServiceConfig.instance.removeSession(jsessionid);
+        if (session != null) {
+            Connection conn = session.getConnection();
+            if (conn != null) {
+                try {
+                    conn.close();
+                } catch (SQLException e) {
+                }
+            }
         }
         return "ok";
     }

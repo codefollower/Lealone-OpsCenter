@@ -17,9 +17,7 @@
  */
 package org.lealone.opscenter.service;
 
-import java.io.PrintWriter;
 import java.io.StringReader;
-import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
@@ -47,11 +45,10 @@ import org.h2.util.ScriptReader;
 import org.h2.util.StringUtils;
 import org.h2.value.DataType;
 import org.lealone.opscenter.service.generated.QueryService;
+import org.lealone.orm.json.JsonArray;
 import org.lealone.orm.json.JsonObject;
 
-public class QueryServiceImpl implements QueryService {
-
-    ServiceSession session;
+public class QueryServiceImpl extends ServiceImpl implements QueryService {
 
     private Profiler profiler;
 
@@ -79,11 +76,12 @@ public class QueryServiceImpl implements QueryService {
             buff.append(PageParser.escapeHtml(s + ";")).append("<br />");
         }
         boolean forceEdit = s.startsWith("@edit");
-        buff.append(getResult(conn, i + 1, s, size == 1, forceEdit)).append("<br />");
+        // buff.append(getResult(conn, i + 1, s, size == 1, forceEdit)).append("<br />");
+        buff.append(getResult(conn, i + 1, s, size == 1, forceEdit));
     }
 
     @Override
-    public String query(String sql) {
+    public String query(String jsessionid, String sql) {
         try {
             ScriptReader r = new ScriptReader(new StringReader(sql));
             final ArrayList<String> list = new ArrayList<>();
@@ -94,6 +92,7 @@ public class QueryServiceImpl implements QueryService {
                 }
                 list.add(s);
             }
+            session = ServiceConfig.instance.getSession(jsessionid);
             final Connection conn = session.getConnection();
             if (SysProperties.CONSOLE_STREAM && ServiceConfig.instance.getAllowChunked()) {
                 String page = new String(ServiceConfig.instance.getFile("result.jsp"), StandardCharsets.UTF_8);
@@ -134,7 +133,20 @@ public class QueryServiceImpl implements QueryService {
         } catch (Throwable e) {
             session.put("result", getStackTrace(0, e, session.getContents().isH2()));
         }
-        return "result.jsp";
+        if (!session.columnNames.isEmpty()) {
+            JsonObject json = new JsonObject();
+            json.put("columnNames", new JsonArray(session.columnNames));
+            json.put("rows", new JsonArray(session.rows));
+            json.put("sql", sql);
+            json.put("type", "result-table");
+            json.put("queryInfo", session.queryInfo);
+            String str = json.encode();
+            session.columnNames.clear();
+            session.rows.clear();
+            session.queryInfo = null;
+            return str;
+        }
+        return session.get("result").toString();
     }
 
     private String getResult(Connection conn, int id, String sql, boolean allowEdit, boolean forceEdit) {
@@ -166,10 +178,10 @@ public class QueryServiceImpl implements QueryService {
             boolean list = false;
             if (JdbcUtils.isBuiltIn(sql, "@autocommit_true")) {
                 conn.setAutoCommit(true);
-                return "${text.result.autoCommitOn}";
+                return session.i18n("text.result.autoCommitOn");
             } else if (JdbcUtils.isBuiltIn(sql, "@autocommit_false")) {
                 conn.setAutoCommit(false);
-                return "${text.result.autoCommitOff}";
+                return session.i18n("text.result.autoCommitOff");
             } else if (JdbcUtils.isBuiltIn(sql, "@cancel")) {
                 stat = session.executingStatement;
                 if (stat != null) {
@@ -221,7 +233,7 @@ public class QueryServiceImpl implements QueryService {
             } else if (JdbcUtils.isBuiltIn(sql, "@maxrows")) {
                 int maxrows = (int) Double.parseDouble(StringUtils.trimSubstring(sql, "@maxrows".length()));
                 session.put("maxrows", Integer.toString(maxrows));
-                return "${text.result.maxrowsSet}";
+                return session.i18n("text.result.maxrowsSet") + " " + maxrows;
             } else if (JdbcUtils.isBuiltIn(sql, "@parameter_meta")) {
                 sql = StringUtils.trimSubstring(sql, "@parameter_meta".length());
                 PreparedStatement prep = conn.prepareStatement(sql);
@@ -302,7 +314,7 @@ public class QueryServiceImpl implements QueryService {
                         } catch (UnsupportedOperationException e) {
                             updateCount = stat.getUpdateCount();
                         }
-                        buff.append("${text.result.updateCount}: ").append(updateCount);
+                        buff.append(session.i18n("text.result.updateCount")).append(": ").append(updateCount);
                         time = System.currentTimeMillis() - time;
                         buff.append("<br />(").append(time).append(" ms)");
                         stat.close();
@@ -399,6 +411,7 @@ public class QueryServiceImpl implements QueryService {
                 buff.append("<th>${text.resultEdit.action}</th>");
             }
             for (int i = 0; i < columns; i++) {
+                session.columnNames.add(meta.getColumnLabel(i + 1));
                 buff.append("<th>").append(PageParser.escapeHtml(meta.getColumnLabel(i + 1))).append("</th>");
             }
             buff.append("</tr>");
@@ -425,9 +438,12 @@ public class QueryServiceImpl implements QueryService {
                                     + "title=\"${text.resultEdit.delete}\" border=\"1\" /></a>")
                             .append("</td>");
                 }
+                ArrayList<String> row = new ArrayList<String>();
                 for (int i = 0; i < columns; i++) {
+                    row.add(escapeData(rs, i + 1));
                     buff.append("<td>").append(escapeData(rs, i + 1)).append("</td>");
                 }
+                session.rows.add(row);
                 buff.append("</tr>");
             }
         }
@@ -469,11 +485,16 @@ public class QueryServiceImpl implements QueryService {
         if (edit) {
             buff.append("</form>");
         }
+
+        String queryInfo;
         if (rows == 0) {
+            queryInfo = session.i18n("text.result.noRows");
             buff.append("(${text.result.noRows}");
         } else if (rows == 1) {
+            queryInfo = session.i18n("text.result.1row");
             buff.append("(${text.result.1row}");
         } else {
+            queryInfo = rows + " " + session.i18n("text.result.rows");
             buff.append('(').append(rows).append(" ${text.result.rows}");
         }
         buff.append(", ");
@@ -485,6 +506,7 @@ public class QueryServiceImpl implements QueryService {
                     + "<input type=\"submit\" class=\"button\" " + "value=\"${text.resultEdit.editResult}\" />"
                     + "<input type=\"hidden\" name=\"sql\" value=\"@edit ").append(sql).append("\" /></form>");
         }
+        session.queryInfo = "(" + queryInfo + ", " + time + " ms)";
         return buff.toString();
     }
 
@@ -575,12 +597,12 @@ public class QueryServiceImpl implements QueryService {
             String sql = history.get(i);
             buff.append("<tr><td><a href=\"getHistory.do?id=").append(i)
                     .append("&jsessionid=${sessionId}\" target=\"h2query\" >")
-                    .append("<img width=16 height=16 src=\"ico_write.gif\" "
+                    .append("<img width=16 height=16 src=\"/ops/img/ico_write.gif\" "
                             + "onmouseover = \"this.className ='icon_hover'\" ")
-                    .append("onmouseout = \"this.className ='icon'\" "
-                            + "class=\"icon\" alt=\"${text.resultEdit.edit}\" ")
-                    .append("title=\"${text.resultEdit.edit}\" border=\"1\"/></a>").append("</td><td>")
-                    .append(PageParser.escapeHtml(sql)).append("</td></tr>");
+                    .append("onmouseout = \"this.className ='icon'\" " + "class=\"icon\" alt=\""
+                            + session.i18n("text.resultEdit.edit") + "\" ")
+                    .append("title=\"" + session.i18n("text.resultEdit.edit") + "\" border=\"1\"/></a>")
+                    .append("</td><td>").append(PageParser.escapeHtml(sql)).append("</td></tr>");
         }
         buff.append("</table>");
         return buff.toString();
@@ -631,7 +653,7 @@ public class QueryServiceImpl implements QueryService {
     }
 
     @Override
-    public String editResult(Integer row, Integer op, String value) {
+    public String editResult(String jsessionid, Integer row, Integer op, String value) {
         JsonObject attributes = new JsonObject(value);
         ResultSet rs = session.result;
         String result = "", error = "";
@@ -667,84 +689,6 @@ public class QueryServiceImpl implements QueryService {
         result = error + getResult(conn, -1, sql, true, true) + result;
         session.put("result", result);
         return "result.jsp";
-    }
-
-    String getStackTrace(int id, Throwable e, boolean isH2) {
-        try {
-            StringWriter writer = new StringWriter();
-            e.printStackTrace(new PrintWriter(writer));
-            String stackTrace = writer.toString();
-            stackTrace = PageParser.escapeHtml(stackTrace);
-            if (isH2) {
-                stackTrace = linkToSource(stackTrace);
-            }
-            stackTrace = StringUtils.replaceAll(stackTrace, "\t", "&nbsp;&nbsp;&nbsp;&nbsp;");
-            String message = PageParser.escapeHtml(e.getMessage());
-            String error = "<a class=\"error\" href=\"#\" " + "onclick=\"var x=document.getElementById('st" + id
-                    + "').style;x.display=x.display==''?'none':'';\">" + message + "</a>";
-            if (e instanceof SQLException) {
-                SQLException se = (SQLException) e;
-                error += " " + se.getSQLState() + "/" + se.getErrorCode();
-                if (isH2) {
-                    int code = se.getErrorCode();
-                    error += " <a href=\"https://h2database.com/javadoc/" + "org/h2/api/ErrorCode.html#c" + code
-                            + "\">(${text.a.help})</a>";
-                }
-            }
-            error += "<span style=\"display: none;\" id=\"st" + id + "\"><br />" + stackTrace + "</span>";
-            error = formatAsError(error);
-            return error;
-        } catch (OutOfMemoryError e2) {
-            ServiceConfig.instance.traceError(e);
-            return e.toString();
-        }
-    }
-
-    private static String linkToSource(String s) {
-        try {
-            StringBuilder result = new StringBuilder(s.length());
-            int idx = s.indexOf("<br />");
-            result.append(s, 0, idx);
-            while (true) {
-                int start = s.indexOf("org.h2.", idx);
-                if (start < 0) {
-                    result.append(s.substring(idx));
-                    break;
-                }
-                result.append(s, idx, start);
-                int end = s.indexOf(')', start);
-                if (end < 0) {
-                    result.append(s.substring(idx));
-                    break;
-                }
-                String element = s.substring(start, end);
-                int open = element.lastIndexOf('(');
-                int dotMethod = element.lastIndexOf('.', open - 1);
-                int dotClass = element.lastIndexOf('.', dotMethod - 1);
-                String packageName = element.substring(0, dotClass);
-                int colon = element.lastIndexOf(':');
-                String file = element.substring(open + 1, colon);
-                String lineNumber = element.substring(colon + 1, element.length());
-                String fullFileName = packageName.replace('.', '/') + "/" + file;
-                result.append("<a href=\"https://h2database.com/html/source.html?file=");
-                result.append(fullFileName);
-                result.append("&line=");
-                result.append(lineNumber);
-                result.append("&build=");
-                result.append(Constants.BUILD_ID);
-                result.append("\">");
-                result.append(element);
-                result.append("</a>");
-                idx = end;
-            }
-            return result.toString();
-        } catch (Throwable t) {
-            return s;
-        }
-    }
-
-    static String formatAsError(String s) {
-        return "<div class=\"error\">" + s + "</div>";
     }
 
     private void unescapeData(String x, ResultSet rs, int columnIndex) throws SQLException {

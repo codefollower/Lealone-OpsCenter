@@ -1,42 +1,55 @@
 ﻿const opsHeader = { 
     data() {
         return {
-            autoCommit: true
+            autoCommit: true,
+            rowcount: 1000,
+            autoComplete: 0,
+            autoSelect: 1,
         }
     },
     methods: {
-        setAutoCommit() {
-            var result = "Auto commit is now " + (this.autoCommit ? "ON" : "OFF");
-            var that = this;
-            var sql = "";
-            axios.post(OpsCenter.QueryService + '/query', { sql: sql })
-            .then(function (response) {
-            	lealone.route('ops', 'result', {result: result});
+        _query(sql) {
+            QueryService.query(lealone.currentUser, sql, data=> {
+                if(data.type == "result-table")
+                    lealone.route('ops', 'result-table', {result: data});
+                else
+                    lealone.route('ops', 'result', {result: data});
             })
         },
+        setAutoCommit() {
+            this._query('@autocommit_' + this.autoCommit + '.');
+        },
+        setMaxRows() {
+            this._query('@maxrows' + this.rowcount + '.');
+        },
         refreshTables() {
-            lealone.route('ops', 'result', {result: "refreshTables: TODO"});
+            lealone.get("tables").readTables();
         },
         commit() {
-            this.lealone.route('ops', 'result', {result: "sql=COMMIT: TODO"});
+            this._query('COMMIT');
         },
         rollback() {
-            this.lealone.route('ops', 'result', {result: "sql=ROLLBACK: TODO"});
+            this._query('ROLLBACK');
         },
         run() {
-            this.lealone.route('ops', 'result', {result: "run sql=" + this.lealone.get("query").sql});
+            this._query(lealone.get("query").sql);
         },
         runSelected() {
-            this.lealone.route('ops', 'result', {result: "runSelected sql=" + this.lealone.get("query").sql});
+            lealone.route('ops', 'result', {result: "runSelected sql=" + lealone.get("query").sql});
         },
         cancel() {
-            this.lealone.route('ops', 'result', {result: "sql=@cancel: TODO"});
+            lealone.route('ops', 'result', {result: "sql=@cancel: TODO"});
         },
         history() {
-            this.lealone.route('ops', 'result', {result: "sql=@history: TODO"});
+            this._query('@history.'); 
+        },
+        setAutoComplete() {
+            lealone.get('query').autoComplete = this.autoComplete;
+        },
+        setAutoSelect() {
+            lealone.get('query').autoSelect = this.autoSelect;
         }
     },
     mounted() {
-        this.lealone.set(this.gid, this);
     }
 }

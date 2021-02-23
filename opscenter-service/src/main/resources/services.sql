@@ -6,13 +6,12 @@ drop service if exists admin_service;
 
 -- 创建服务: admin_service，会生成一个对应的AdminService接口
 create service if not exists admin_service (
-  login(password varchar) varchar,
-  logout() varchar,
+  login(password varchar) varchar, 
   save(port varchar, allow_others varchar, ssl varchar) varchar,
   admin() varchar,
   start_translate() varchar,
   shutdown() varchar,
-  tools(tool varchar, args varchar) varchar
+  tools(tool_name varchar, args varchar) varchar
 )
 package @packageName
 implement by 'org.lealone.opscenter.service.AdminServiceImpl' -- AdminService接口的默认实现类
@@ -30,6 +29,7 @@ create service if not exists ops_service (
   setting_remove(name varchar) varchar,
   read_translations(language varchar) varchar,
   login(url varchar, user varchar, password varchar) varchar,
+  logout(jsessionid varchar) varchar,
   test_connection() varchar
 )
 package @packageName
@@ -42,8 +42,8 @@ drop service if exists query_service;
 
 -- 创建服务: query_service，会生成一个对应的QueryService接口
 create service if not exists query_service (
-  query(sql varchar) varchar,
-  edit_result(row int, op int, value varchar) varchar
+  query(jsessionid varchar, sql varchar) varchar,
+  edit_result(jsessionid varchar, row int, op int, value varchar) varchar
 )
 package @packageName
 implement by 'org.lealone.opscenter.service.QueryServiceImpl' -- QueryService接口的默认实现类
@@ -58,3 +58,14 @@ create service if not exists system_service (
 package @packageName
 implement by 'org.lealone.opscenter.service.SystemServiceImpl'
 generate code @srcPath;
+
+
+drop service if exists database_service;
+
+create service if not exists database_service (
+  read_all_database_objects(jsessionid varchar) varchar
+)
+package @packageName
+implement by 'org.lealone.opscenter.service.DatabaseServiceImpl'
+generate code @srcPath;
+

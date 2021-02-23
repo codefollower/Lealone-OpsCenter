@@ -1,16 +1,4 @@
-<!DOCTYPE html>
-<!--
-Copyright 2004-2020 H2 Group. Multiple-Licensed under the MPL 2.0,
-and the EPL 1.0 (https://h2database.com/html/license.html).
-Initial Developer: H2 Group
--->
-<html xmlns:th="http://www.thymeleaf.org">
-<head>
-  <meta charset="utf-8">
-</head>
-<body>
-
-<div th:fragment="login">
+<div id="login">
     <form id="login" name="login" method="post" action="/">
         <p>
           <select v-model="language" size="1" @change="readTranslations">
@@ -18,8 +6,8 @@ Initial Developer: H2 Group
     		  <option :value="language[0]" :selected="language[0] == language">{{ language[1] }}</option>
             </template>
           </select>
-          &nbsp;&nbsp; <a href="/" @click.prevent="lealone.route('admin', 'admin')">{{ text.login.goAdmin }}</a>
-          &nbsp;&nbsp; <a href="/" @click.prevent="lealone.route('admin', 'tools')">{{ text.a.tools }}</a>
+          &nbsp;&nbsp; <a href="/" @click.prevent="route('admin')">{{ text.login.goAdmin }}</a>
+          &nbsp;&nbsp; <a href="/" @click.prevent="route('tools')">{{ text.a.tools }}</a>
           &nbsp;&nbsp; <a href="/" @click.prevent="lealone.route('admin', 'help')">{{ text.a.help }}</a>
         </p>
         <table class="login">
@@ -123,6 +111,3 @@ Initial Developer: H2 Group
         <p class="error">{{ errorMessage }}</p>
     </form>
 </div>
-
-</body>
-</html>

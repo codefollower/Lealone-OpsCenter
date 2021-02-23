@@ -1,0 +1,20 @@
+<div id="result-table" style="margin:10px;padding-top:0px">
+  {{ result.sql }};<br />
+  <table class="resultSet">
+    <tr>
+      <template v-for="columnName in result.columnNames">
+      <th>{{ columnName }}</th>
+      </template>
+    </tr>
+
+    <template v-for="row in result.rows">
+    <tr>
+      <template v-for="columnValue in row">
+      <td>{{ columnValue }}</td>
+      </template>
+    </tr>
+    </template>
+  </table>
+  {{ result.queryInfo }}
+  <br />
+</div>

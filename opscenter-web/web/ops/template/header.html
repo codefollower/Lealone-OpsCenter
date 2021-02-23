@@ -1,16 +1,4 @@
-<!DOCTYPE html>
-<!--
-Copyright 2004-2020 H2 Group. Multiple-Licensed under the MPL 2.0,
-and the EPL 1.0 (https://h2database.com/html/license.html).
-Initial Developer: H2 Group
--->
-<html xmlns:th="http://www.thymeleaf.org">
-<head>
-  <meta charset="utf-8">
-</head>
-<body>
-
-<div th:fragment="header">
+<div id="header">
     <form name="header" method="post" action="/">
         <table class="toolbar">
             <tr class="toolbar">
@@ -59,8 +47,7 @@ Initial Developer: H2 Group
                     &nbsp;{{ text.toolbar.maxRows }}&nbsp;
                 </td>
                 <td class="toolbar">
-                    <select name="rowcount" size="1" onchange=
-                    "javascript:parent.h2result.document.location='query.do?jsessionid=220f55b36da2098b8b89f75a6963c7c1&amp;sql=@maxrows+'+header.rowcount.value+'.';">
+                    <select v-model="rowcount" size="1" @change="setMaxRows">
                     <option value="0">
                             {{ text.toolbar.all }}
                         </option>
@@ -116,28 +103,28 @@ Initial Developer: H2 Group
                 </td>
                 <td class="toolbar">
                     {{ text.toolbar.autoComplete }}&nbsp;
-                    <select name="autoComplete" size="1"
-                        onchange="javascript:parent.h2query.setAutoComplete(this.value)">
+                    <select v-model="autoComplete" size="1"
+                        @change.prevent="setAutoComplete">
                         <option selected="selected" value="0">
-                            {{ txt['toolbar.autoComplete.off'] }}
+                            {{ i18n['toolbar.autoComplete.off'] }}
                         </option>
                         <option value="1">
-                            {{ txt['toolbar.autoComplete.normal'] }}
+                            {{ i18n['toolbar.autoComplete.normal'] }}
                         </option>
                         <option value="2">
-                            {{ txt['toolbar.autoComplete.full'] }}
+                            {{ i18n['toolbar.autoComplete.full'] }}
                         </option>
                     </select>&nbsp;
                 </td>
                 <td class="toolbar">
                     {{ text.toolbar.autoSelect }}&nbsp;
-                    <select name="autoSelect" size="1"
-                        onchange="javascript:parent.h2query.setAutoSelect(this.value)">
+                    <select v-model="autoSelect" size="1"
+                        @change.prevent="setAutoSelect()">
                         <option value="0">
-                            {{ txt['toolbar.autoSelect.off'] }}
+                            {{ i18n['toolbar.autoSelect.off'] }}
                         </option>
                         <option selected="selected" value="1">
-                            {{ txt['toolbar.autoSelect.on'] }}
+                            {{ i18n['toolbar.autoSelect.on'] }}
                         </option>
                     </select>
                 </td>
@@ -154,6 +141,3 @@ Initial Developer: H2 Group
         </table>
     </form>
 </div>
-
-</body>
-</html>
