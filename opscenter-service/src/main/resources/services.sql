@@ -50,16 +50,6 @@ implement by 'org.lealone.opscenter.service.QueryServiceImpl' -- QueryService接
 generate code @srcPath;
 
 
-drop service if exists system_service;
-
-create service if not exists system_service (
-  load_services(service_names varchar) varchar
-)
-package @packageName
-implement by 'org.lealone.opscenter.service.SystemServiceImpl'
-generate code @srcPath;
-
-
 drop service if exists database_service;
 
 create service if not exists database_service (
