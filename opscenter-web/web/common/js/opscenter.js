@@ -1,16 +1,9 @@
-﻿var OpsCenter = {
-    Host: '',
-}
+﻿const OpsService = Lealone.getService("ops_service");
+const AdminService = Lealone.getService("admin_service");
+const QueryService = Lealone.getService("query_service");
+const DatabaseService = Lealone.getService("database_service");
 
-OpsCenter.OpsService = OpsCenter.Host + '/service/ops_service';
-OpsCenter.AdminService = OpsCenter.Host + '/service/admin_service';
-OpsCenter.QueryService = OpsCenter.Host + '/service/query_service';
-OpsCenter.DatabaseService = OpsCenter.Host + '/service/database_service';
-
-OpsService = Lealone.getService("ops_service");
-AdminService = Lealone.getService("admin_service");
-QueryService = Lealone.getService("query_service");
-DatabaseService = Lealone.getService("database_service");
+const OpsCenter = {};
 
 OpsCenter.i18n = {
     loadAndMount(app, appName) {
@@ -20,9 +13,7 @@ OpsCenter.i18n = {
             app.mixin({
                 data() { return { i18n: text,  text: newText } },
             });
-            Lealone.loadServices(() => {
-                app.mount(appName)
-            });
+            app.mount(appName);
         });
     },
     parse(text) {
