@@ -103,8 +103,10 @@ public class ServiceConfig {
                     + "jdbc:derby://localhost:1527/test;create=true|sa",
             "Generic Derby (Embedded)|org.apache.derby.iapi.jdbc.AutoloadedDriver|" + "jdbc:derby:test;create=true|sa",
             "Generic H2 (Server)|org.h2.Driver|" + "jdbc:h2:tcp://localhost/~/test|sa",
+            "Generic H2 (Embedded)|org.h2.Driver|" + "jdbc:h2:~/test|sa",
             // this will be listed on top for new installations
-            "Generic H2 (Embedded)|org.h2.Driver|" + "jdbc:h2:~/test|sa", };
+            "Generic Lealone (Server)|org.lealone.client.jdbc.JdbcDriver|"
+                    + "jdbc:lealone:tcp://127.0.0.1:9210/lealone|root", };
 
     private static int ticker;
 
