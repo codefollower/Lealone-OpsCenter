@@ -21,8 +21,9 @@ import org.h2.bnf.context.DbSchema;
 import org.h2.bnf.context.DbTableOrView;
 import org.h2.engine.SysProperties;
 import org.h2.util.StringUtils;
-import org.lealone.orm.json.JsonArray;
-import org.lealone.orm.json.JsonObject;
+
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 
 public class DatabaseService extends Service {
 
@@ -39,7 +40,6 @@ public class DatabaseService extends Service {
             contents.readContents(url, conn);
             session.loadBnf();
             isH2 = contents.isH2();
-
             session.addNode(0, 0, 0, "database", url);
             int treeIndex = 1;
 

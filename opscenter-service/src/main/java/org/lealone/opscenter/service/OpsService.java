@@ -33,8 +33,9 @@ import java.util.Properties;
 
 import org.h2.message.DbException;
 import org.h2.util.SortedProperties;
-import org.lealone.orm.json.JsonArray;
-import org.lealone.orm.json.JsonObject;
+
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 
 public class OpsService extends Service {
 

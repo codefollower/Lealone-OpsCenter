@@ -49,59 +49,19 @@ public class ServiceConfig {
 
     public static ServiceConfig instance = new ServiceConfig();
 
-    static final String[][] LANGUAGES = {
-            { "cs", "\u010ce\u0161tina" },
-            { "de", "Deutsch" },
-            { "en", "English" },
-            { "es", "Espa\u00f1ol" },
-            { "fr", "Fran\u00e7ais" },
-            { "hu", "Magyar" },
-            { "ko", "\ud55c\uad6d\uc5b4" },
-            { "in", "Indonesia" },
-            { "it", "Italiano" },
-            { "ja", "\u65e5\u672c\u8a9e" },
-            { "nl", "Nederlands" },
-            { "pl", "Polski" },
-            { "pt_BR", "Portugu\u00eas (Brasil)" },
-            { "pt_PT", "Portugu\u00eas (Europeu)" },
-            { "ru", "\u0440\u0443\u0441\u0441\u043a\u0438\u0439" },
-            { "sk", "Slovensky" },
-            { "tr", "T\u00fcrk\u00e7e" },
+    static final String[][] LANGUAGES = { { "cs", "\u010ce\u0161tina" }, { "de", "Deutsch" }, { "en", "English" },
+            { "es", "Espa\u00f1ol" }, { "fr", "Fran\u00e7ais" }, { "hu", "Magyar" }, { "ko", "\ud55c\uad6d\uc5b4" },
+            { "in", "Indonesia" }, { "it", "Italiano" }, { "ja", "\u65e5\u672c\u8a9e" }, { "nl", "Nederlands" },
+            { "pl", "Polski" }, { "pt_BR", "Portugu\u00eas (Brasil)" }, { "pt_PT", "Portugu\u00eas (Europeu)" },
+            { "ru", "\u0440\u0443\u0441\u0441\u043a\u0438\u0439" }, { "sk", "Slovensky" }, { "tr", "T\u00fcrk\u00e7e" },
             { "uk", "\u0423\u043A\u0440\u0430\u0457\u043D\u0441\u044C\u043A\u0430" },
-            { "zh_CN", "\u4e2d\u6587 (\u7b80\u4f53)" },
-            { "zh_TW", "\u4e2d\u6587 (\u7e41\u9ad4)" }, };
+            { "zh_CN", "\u4e2d\u6587 (\u7b80\u4f53)" }, { "zh_TW", "\u4e2d\u6587 (\u7e41\u9ad4)" }, };
 
     private static final String COMMAND_HISTORY = "commandHistory";
 
     private static final String DEFAULT_LANGUAGE = "en";
 
     private static final String[] GENERIC = {
-            "Generic JNDI Data Source|javax.naming.InitialContext|" + "java:comp/env/jdbc/Test|sa",
-            "Generic Teradata|com.teradata.jdbc.TeraDriver|" + "jdbc:teradata://whomooz/|",
-            "Generic Snowflake|com.snowflake.client.jdbc.SnowflakeDriver|"
-                    + "jdbc:snowflake://accountName.snowflakecomputing.com|",
-            "Generic Redshift|com.amazon.redshift.jdbc42.Driver|" + "jdbc:redshift://endpoint:5439/database|",
-            "Generic Impala|org.cloudera.impala.jdbc41.Driver|" + "jdbc:impala://clustername:21050/default|",
-            "Generic Hive 2|org.apache.hive.jdbc.HiveDriver|" + "jdbc:hive2://clustername:10000/default|",
-            "Generic Hive|org.apache.hadoop.hive.jdbc.HiveDriver|" + "jdbc:hive://clustername:10000/default|",
-            "Generic Azure SQL|com.microsoft.sqlserver.jdbc.SQLServerDriver|"
-                    + "jdbc:sqlserver://name.database.windows.net:1433|",
-            "Generic Firebird Server|org.firebirdsql.jdbc.FBDriver|"
-                    + "jdbc:firebirdsql:localhost:c:/temp/firebird/test|sysdba",
-            "Generic SQLite|org.sqlite.JDBC|" + "jdbc:sqlite:test|sa",
-            "Generic DB2|com.ibm.db2.jcc.DB2Driver|" + "jdbc:db2://localhost/test|",
-            "Generic Oracle|oracle.jdbc.driver.OracleDriver|" + "jdbc:oracle:thin:@localhost:1521:XE|sa",
-            "Generic MS SQL Server 2000|com.microsoft.jdbc.sqlserver.SQLServerDriver|"
-                    + "jdbc:microsoft:sqlserver://localhost:1433;DatabaseName=sqlexpress|sa",
-            "Generic MS SQL Server 2005|com.microsoft.sqlserver.jdbc.SQLServerDriver|"
-                    + "jdbc:sqlserver://localhost;DatabaseName=test|sa",
-            "Generic PostgreSQL|org.postgresql.Driver|" + "jdbc:postgresql:test|",
-            "Generic MySQL|com.mysql.cj.jdbc.Driver|" + "jdbc:mysql://localhost:3306/test|",
-            "Generic MariaDB|org.mariadb.jdbc.Driver|" + "jdbc:mariadb://localhost:3306/test|",
-            "Generic HSQLDB|org.hsqldb.jdbcDriver|" + "jdbc:hsqldb:test;hsqldb.default_table_type=cached|sa",
-            "Generic Derby (Server)|org.apache.derby.client.ClientAutoloadedDriver|"
-                    + "jdbc:derby://localhost:1527/test;create=true|sa",
-            "Generic Derby (Embedded)|org.apache.derby.iapi.jdbc.AutoloadedDriver|" + "jdbc:derby:test;create=true|sa",
             "Generic H2 (Server)|org.h2.Driver|" + "jdbc:h2:tcp://localhost/~/test|sa",
             "Generic H2 (Embedded)|org.h2.Driver|" + "jdbc:h2:~/test|sa",
             // this will be listed on top for new installations

@@ -44,8 +44,9 @@ import org.h2.util.Profiler;
 import org.h2.util.ScriptReader;
 import org.h2.util.StringUtils;
 import org.h2.value.DataType;
-import org.lealone.orm.json.JsonArray;
-import org.lealone.orm.json.JsonObject;
+
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 
 public class QueryService extends Service {
 
