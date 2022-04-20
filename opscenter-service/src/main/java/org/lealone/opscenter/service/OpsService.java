@@ -33,11 +33,10 @@ import java.util.Properties;
 
 import org.h2.message.DbException;
 import org.h2.util.SortedProperties;
-import org.lealone.opscenter.service.generated.OpsService;
 import org.lealone.orm.json.JsonArray;
 import org.lealone.orm.json.JsonObject;
 
-public class OpsServiceImpl extends ServiceImpl implements OpsService {
+public class OpsService extends Service {
 
     static final String[][] LANGUAGES = { //
             { "cs", "\u010ce\u0161tina" }, //
@@ -63,7 +62,6 @@ public class OpsServiceImpl extends ServiceImpl implements OpsService {
             { "zh_TW", "\u4e2d\u6587 (\u7e41\u9ad4)" }, //
     };
 
-    @Override
     public String getLanguages() {
         ArrayList<List<String>> list = new ArrayList<>(LANGUAGES.length);
         for (int i = 0; i < LANGUAGES.length; i++) {
@@ -74,7 +72,6 @@ public class OpsServiceImpl extends ServiceImpl implements OpsService {
         return json.encode();
     }
 
-    @Override
     public String getSettings(String setting) {
         JsonObject json = new JsonObject();
         String[] settingNames = ServiceConfig.instance.getSettingNames();
@@ -94,7 +91,6 @@ public class OpsServiceImpl extends ServiceImpl implements OpsService {
         return json.encode();
     }
 
-    @Override
     public String settingSave(String name, String driver, String url, String user) {
         ConnectionInfo info = new ConnectionInfo();
         info.name = name;
@@ -106,7 +102,6 @@ public class OpsServiceImpl extends ServiceImpl implements OpsService {
         return name;
     }
 
-    @Override
     public String settingRemove(String name) {
         String setting = "";
         ServiceConfig.instance.removeSetting(name);
@@ -118,7 +113,6 @@ public class OpsServiceImpl extends ServiceImpl implements OpsService {
         return setting;
     }
 
-    @Override
     public String login(String url, String user, String password) {
         Properties prop = new Properties();
         prop.setProperty("user", user);
@@ -134,7 +128,6 @@ public class OpsServiceImpl extends ServiceImpl implements OpsService {
         }
     }
 
-    @Override
     public String logout(String jsessionid) {
         ServiceSession session = ServiceConfig.instance.removeSession(jsessionid);
         if (session != null) {
@@ -149,7 +142,6 @@ public class OpsServiceImpl extends ServiceImpl implements OpsService {
         return "ok";
     }
 
-    @Override
     public String readTranslations(String language) {
         JsonObject json = new JsonObject();
         if (language == null)
@@ -181,7 +173,6 @@ public class OpsServiceImpl extends ServiceImpl implements OpsService {
         return json.encode();
     }
 
-    @Override
     public String testConnection() {
         return null;
     }

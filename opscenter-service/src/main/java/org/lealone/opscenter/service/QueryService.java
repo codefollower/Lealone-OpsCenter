@@ -44,11 +44,10 @@ import org.h2.util.Profiler;
 import org.h2.util.ScriptReader;
 import org.h2.util.StringUtils;
 import org.h2.value.DataType;
-import org.lealone.opscenter.service.generated.QueryService;
 import org.lealone.orm.json.JsonArray;
 import org.lealone.orm.json.JsonObject;
 
-public class QueryServiceImpl extends ServiceImpl implements QueryService {
+public class QueryService extends Service {
 
     private Profiler profiler;
 
@@ -80,7 +79,6 @@ public class QueryServiceImpl extends ServiceImpl implements QueryService {
         buff.append(getResult(conn, i + 1, s, size == 1, forceEdit));
     }
 
-    @Override
     public String query(String jsessionid, String sql) {
         try {
             ScriptReader r = new ScriptReader(new StringReader(sql));
@@ -652,7 +650,6 @@ public class QueryServiceImpl extends ServiceImpl implements QueryService {
         return PageParser.escapeHtml(d);
     }
 
-    @Override
     public String editResult(String jsessionid, Integer row, Integer op, String value) {
         JsonObject attributes = new JsonObject(value);
         ResultSet rs = session.result;

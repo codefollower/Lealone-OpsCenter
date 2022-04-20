@@ -41,13 +41,11 @@ import org.h2.util.StringUtils;
 import org.h2.util.Tool;
 import org.h2.util.Utils;
 import org.h2.util.Utils10;
-import org.lealone.opscenter.service.generated.AdminService;
 import org.lealone.orm.json.JsonArray;
 import org.lealone.orm.json.JsonObject;
 
-public class AdminServiceImpl extends ServiceImpl implements AdminService {
+public class AdminService extends Service {
 
-    @Override
     public String login(String password) {
         if (password == null || password.isEmpty() || !instance.checkAdminPassword(password)) {
             return "failed";
@@ -55,7 +53,6 @@ public class AdminServiceImpl extends ServiceImpl implements AdminService {
         return "ok";
     }
 
-    @Override
     public String admin() {
         JsonObject json = new JsonObject();
         json.put("port", Integer.toString(instance.getPort()));
@@ -65,7 +62,6 @@ public class AdminServiceImpl extends ServiceImpl implements AdminService {
         return json.encode();
     }
 
-    @Override
     public String save(String port0, String allowOthers0, String ssl0) {
         try {
             Properties prop = new SortedProperties();
@@ -89,7 +85,6 @@ public class AdminServiceImpl extends ServiceImpl implements AdminService {
         return admin();
     }
 
-    @Override
     public String tools(String toolName, String args) {
         JsonObject json = new JsonObject();
         try {
@@ -134,7 +129,6 @@ public class AdminServiceImpl extends ServiceImpl implements AdminService {
         return json.encode();
     }
 
-    @Override
     public String startTranslate() {
         Map<?, ?> p = Map.class.cast(session.map.get("text"));
         @SuppressWarnings("unchecked")
@@ -151,7 +145,7 @@ public class AdminServiceImpl extends ServiceImpl implements AdminService {
      *
      * @return the page to display
      */
-    @Override
+
     public String shutdown() {
         instance.shutdown();
         return "ok";

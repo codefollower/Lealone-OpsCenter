@@ -21,16 +21,14 @@ import org.h2.bnf.context.DbSchema;
 import org.h2.bnf.context.DbTableOrView;
 import org.h2.engine.SysProperties;
 import org.h2.util.StringUtils;
-import org.lealone.opscenter.service.generated.DatabaseService;
 import org.lealone.orm.json.JsonArray;
 import org.lealone.orm.json.JsonObject;
 
-public class DatabaseServiceImpl extends ServiceImpl implements DatabaseService {
+public class DatabaseService extends Service {
 
     private static final Comparator<DbTableOrView> SYSTEM_SCHEMA_COMPARATOR = Comparator
             .comparing(DbTableOrView::getName, String.CASE_INSENSITIVE_ORDER);
 
-    @Override
     public String readAllDatabaseObjects(String jsessionid) {
         session = ServiceConfig.instance.getSession(jsessionid);
         DbContents contents = session.getContents();

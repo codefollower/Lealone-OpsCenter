@@ -1,10 +1,7 @@
-set @packageName 'org.lealone.opscenter.service.generated'; -- 生成的服务接口所在的包名
-set @srcPath '../opscenter-service/src/main/java'; -- 生成的服务接口对应的源文件所在的根目录
-
 -- 删除服务: admin_service
 drop service if exists admin_service;
 
--- 创建服务: admin_service，会生成一个对应的AdminService接口
+-- 创建服务: admin_service
 create service if not exists admin_service (
   login(password varchar) varchar, 
   save(port varchar, allow_others varchar, ssl varchar) varchar,
@@ -13,15 +10,13 @@ create service if not exists admin_service (
   shutdown() varchar,
   tools(tool_name varchar, args varchar) varchar
 )
-package @packageName
-implement by 'org.lealone.opscenter.service.AdminServiceImpl' -- AdminService接口的默认实现类
-generate code @srcPath;
-
+implement by 'org.lealone.opscenter.service.AdminService'
+;
 
 -- 删除服务: ops_service
 drop service if exists ops_service;
 
--- 创建服务: ops_service，会生成一个对应的OpsService接口
+-- 创建服务: ops_service
 create service if not exists ops_service (
   get_languages() varchar,
   get_settings(setting varchar) varchar,
@@ -32,30 +27,25 @@ create service if not exists ops_service (
   logout(jsessionid varchar) varchar,
   test_connection() varchar
 )
-package @packageName
-implement by 'org.lealone.opscenter.service.OpsServiceImpl' -- OpsService接口的默认实现类
-generate code @srcPath;
-
+implement by 'org.lealone.opscenter.service.OpsService'
+;
 
 -- 删除服务: query_service
 drop service if exists query_service;
 
--- 创建服务: query_service，会生成一个对应的QueryService接口
+-- 创建服务: query_service
 create service if not exists query_service (
   query(jsessionid varchar, sql varchar) varchar,
   edit_result(jsessionid varchar, row int, op int, value varchar) varchar
 )
-package @packageName
-implement by 'org.lealone.opscenter.service.QueryServiceImpl' -- QueryService接口的默认实现类
-generate code @srcPath;
-
+implement by 'org.lealone.opscenter.service.QueryService'
+;
 
 drop service if exists database_service;
 
 create service if not exists database_service (
   read_all_database_objects(jsessionid varchar) varchar
 )
-package @packageName
-implement by 'org.lealone.opscenter.service.DatabaseServiceImpl'
-generate code @srcPath;
+implement by 'org.lealone.opscenter.service.DatabaseService'
+;
 

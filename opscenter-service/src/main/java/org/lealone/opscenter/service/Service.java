@@ -25,7 +25,7 @@ import org.h2.engine.Constants;
 import org.h2.server.web.PageParser;
 import org.h2.util.StringUtils;
 
-public abstract class ServiceImpl {
+public abstract class Service {
 
     ServiceSession session;
 
