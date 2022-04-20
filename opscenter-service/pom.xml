@@ -31,9 +31,9 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.lealone.opscenter</groupId>
-            <artifactId>opscenter-dal</artifactId>
-            <version>${project.version}</version>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>2.0.206</version>
         </dependency>
     </dependencies>
 </project>

@@ -27,8 +27,6 @@ public class OpsCenterSqlScript {
         new OpsCenterSqlScript().run(args);
     }
 
-    @SuppressWarnings("unused")
-    private String tableDir = "../opscenter-dal/src/main/resources";
     private String serviceDir = "../opscenter-service/src/main/resources";
 
     private void run(String[] args) throws Exception {
@@ -38,12 +36,6 @@ public class OpsCenterSqlScript {
         String jdbcUrl = "jdbc:lealone:tcp://localhost/lealone?user=root&password=";
         // runSql(jdbcUrl, "drop database if exists opscenter");
         runSql(jdbcUrl, "create database if not exists opscenter");
-
-        // 执行建表脚本，同时自动生成对应的模型类的代码
-        // runScript(tableDir + "/tables.sql");
-
-        // 初始化数据
-        // runScript(tableDir + "/init-data.sql");
 
         // 执行服务创建脚本，同时自动生成对应的服务接口代码
         runScript(serviceDir + "/services.sql");
@@ -57,9 +49,6 @@ public class OpsCenterSqlScript {
         for (int i = 0; i < args.length; i++) {
             String a = args[i];
             switch (a) {
-            case "-tableDir":
-                tableDir = args[++i];
-                break;
             case "-serviceDir":
                 serviceDir = args[++i];
                 break;

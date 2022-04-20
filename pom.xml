@@ -26,7 +26,6 @@
     <version>1.0.0</version>
 
     <modules>
-        <module>opscenter-dal</module>
         <module>opscenter-service</module>
         <module>opscenter-web</module>
         <module>opscenter-main</module>
