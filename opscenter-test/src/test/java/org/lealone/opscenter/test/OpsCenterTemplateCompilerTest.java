@@ -19,12 +19,14 @@ package org.lealone.opscenter.test;
 
 import java.io.IOException;
 
+import org.lealone.opscenter.main.OpsCenter;
 import org.lealone.server.template.TemplateCompiler;
 
 public class OpsCenterTemplateCompilerTest {
 
     public static void main(String[] args) throws IOException {
-        args = new String[] { "-webRoot", "../opscenter-web/web" };
+        String webRoot = OpsCenter.getAbsolutePath("opscenter-web/web");
+        args = new String[] { "-webRoot", webRoot };
         TemplateCompiler.main(args);
     }
 

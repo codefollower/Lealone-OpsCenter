@@ -17,6 +17,8 @@
  */
 package org.lealone.opscenter.main;
 
+import java.io.File;
+import java.net.URL;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.Statement;
@@ -27,7 +29,8 @@ public class OpsCenterSqlScript {
         new OpsCenterSqlScript().run(args);
     }
 
-    private String serviceDir = "../opscenter-service/src/main/resources";
+    private String serviceDir;
+    private String srcDir;
 
     private void run(String[] args) throws Exception {
         parseArgs(args);
@@ -38,7 +41,7 @@ public class OpsCenterSqlScript {
         runSql(jdbcUrl, "create database if not exists opscenter");
 
         // 执行服务创建脚本，同时自动生成对应的服务接口代码
-        runScript(serviceDir + "/services.sql");
+        runScript(getSqlFile(serviceDir, "services.sql"));
     }
 
     private void parseArgs(String[] args) {
@@ -52,6 +55,9 @@ public class OpsCenterSqlScript {
             case "-serviceDir":
                 serviceDir = args[++i];
                 break;
+            case "-srcDir":
+                srcDir = args[++i];
+                break;
             default:
                 System.out.println("选项名 '" + a + "' 无效");
                 System.exit(-1);
@@ -59,13 +65,45 @@ public class OpsCenterSqlScript {
         }
     }
 
-    static void runScript(String scriptFile) throws Exception {
-        String jdbcUrl = "jdbc:lealone:tcp://localhost/opscenter?user=root&password=";
-        runSql(jdbcUrl, "RUNSCRIPT FROM '" + scriptFile + "'");
+    private String getSqlFile(String dir, String name) {
+        try {
+            File file;
+            if (dir != null) {
+                file = new File(dir, name);
+            } else {
+                URL url = OpsCenterSqlScript.class.getClassLoader().getResource(name);
+                file = new File(url.toURI());
+            }
+            return file.getAbsolutePath();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
-    static void runSql(String url, String sql) throws Exception {
+    private void runScript(String scriptFile) throws Exception {
+        String jdbcUrl = "jdbc:lealone:tcp://localhost/opscenter?user=root&password=";
+        String srcDir = this.srcDir;
+        if (srcDir == null) {
+            int pos = scriptFile.indexOf("target");
+            if (pos > 0) {
+                srcDir = scriptFile.substring(0, pos) + "src/main/java".replace('/', File.separatorChar);
+            }
+        }
+        runSql(jdbcUrl, "RUNSCRIPT FROM '" + scriptFile + "'", srcDir);
+    }
+
+    private void runSql(String url, String sql) throws Exception {
+        runSql(url, sql, null);
+    }
+
+    private void runSql(String url, String sql, String srcDir) throws Exception {
         try (Connection conn = DriverManager.getConnection(url); Statement stmt = conn.createStatement()) {
+            if (srcDir != null) {
+                String setSql = "set @srcPath '" + srcDir + "'";
+                stmt.executeUpdate(setSql);
+                System.out.println("execute sql: " + setSql);
+            }
             stmt.executeUpdate(sql);
             System.out.println("execute sql: " + sql);
         }
