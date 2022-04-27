@@ -5,113 +5,78 @@
  */
 package org.lealone.opscenter.service;
 
-import java.sql.Connection;
 import java.sql.DatabaseMetaData;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.Arrays;
-import java.util.Comparator;
+import java.util.ArrayList;
 import java.util.HashMap;
 
-import org.h2.bnf.context.DbColumn;
-import org.h2.bnf.context.DbContents;
-import org.h2.bnf.context.DbSchema;
-import org.h2.bnf.context.DbTableOrView;
-import org.h2.engine.SysProperties;
-import org.h2.util.StringUtils;
+import org.lealone.common.util.StringUtils;
+import org.lealone.common.util.Utils;
+import org.lealone.db.Database;
+import org.lealone.db.auth.User;
+import org.lealone.db.schema.Schema;
+import org.lealone.db.session.ServerSession;
+import org.lealone.db.table.Column;
+import org.lealone.db.table.Table;
+import org.lealone.db.table.TableView;
 
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 public class DatabaseService extends Service {
 
-    private static final Comparator<DbTableOrView> SYSTEM_SCHEMA_COMPARATOR = Comparator
-            .comparing(DbTableOrView::getName, String.CASE_INSENSITIVE_ORDER);
-
     public String readAllDatabaseObjects(String jsessionid) {
         session = ServiceConfig.instance.getSession(jsessionid);
-        DbContents contents = session.getContents();
-        boolean isH2 = false;
+
+        ServerSession serverSession = session.getServerSession();
+        Database db = serverSession.getDatabase();
         try {
-            String url = (String) session.get("url");
-            Connection conn = session.getConnection();
-            contents.readContents(url, conn);
-            session.loadBnf();
-            isH2 = contents.isH2();
-            session.addNode(0, 0, 0, "database", url);
+            session.addNode(0, 0, 0, "database", db.getName());
             int treeIndex = 1;
 
-            DbSchema defaultSchema = contents.getDefaultSchema();
-            treeIndex = addTablesAndViews(defaultSchema, true, treeIndex);
-            DbSchema[] schemas = contents.getSchemas();
-            for (DbSchema schema : schemas) {
-                if (schema == defaultSchema || schema == null) {
-                    continue;
-                }
-                session.addNode(treeIndex, 0, 1, "folder", schema.name);
+            for (Schema schema : db.getAllSchemas()) {
+                session.addNode(treeIndex, 0, 1, "folder", schema.getName());
                 treeIndex++;
                 treeIndex = addTablesAndViews(schema, false, treeIndex);
             }
-            if (isH2) {
-                try (Statement stat = conn.createStatement()) {
-                    ResultSet rs;
-                    try {
-                        rs = stat.executeQuery("SELECT SEQUENCE_NAME, BASE_VALUE, INCREMENT FROM "
-                                + "INFORMATION_SCHEMA.SEQUENCES ORDER BY SEQUENCE_NAME");
-                    } catch (SQLException e) {
-                        rs = stat.executeQuery("SELECT SEQUENCE_NAME, CURRENT_VALUE, INCREMENT FROM "
-                                + "INFORMATION_SCHEMA.SEQUENCES ORDER BY SEQUENCE_NAME");
-                    }
-                    for (int i = 0; rs.next(); i++) {
-                        if (i == 0) {
-                            session.addNode(treeIndex, 0, 1, "sequences", session.i18n("text.tree.sequences"));
-                            treeIndex++;
-                        }
-                        String name = rs.getString(1);
-                        String currentBase = rs.getString(2);
-                        String increment = rs.getString(3);
-                        session.addNode(treeIndex, 1, 1, "sequence", name);
-                        treeIndex++;
-                        session.addNode(treeIndex, 2, 2, "type",
-                                session.i18n("text.tree.current") + ": " + currentBase);
-                        treeIndex++;
-                        if (!"1".equals(increment)) {
-                            session.addNode(treeIndex, 2, 2, "type",
-                                    session.i18n("text.tree.increment") + ": " + increment);
-                            treeIndex++;
-                        }
-                    }
-                    rs.close();
-                    try {
-                        rs = stat.executeQuery(
-                                "SELECT USER_NAME, IS_ADMIN FROM INFORMATION_SCHEMA.USERS ORDER BY USER_NAME");
-                    } catch (SQLException e) {
-                        rs = stat.executeQuery("SELECT NAME, ADMIN FROM INFORMATION_SCHEMA.USERS ORDER BY NAME");
-                    }
-                    for (int i = 0; rs.next(); i++) {
-                        if (i == 0) {
-                            session.addNode(treeIndex, 0, 1, "users", session.i18n("text.tree.users"));
-                            treeIndex++;
-                        }
-                        String name = rs.getString(1);
-                        String admin = rs.getString(2);
-                        session.addNode(treeIndex, 1, 1, "user", name);
-                        treeIndex++;
-                        if (admin.equalsIgnoreCase("TRUE")) {
-                            session.addNode(treeIndex, 2, 2, "type", session.i18n("text.tree.admin"));
-                            treeIndex++;
-                        }
-                    }
-                    rs.close();
+            int i = 0;
+            for (User user : db.getAllUsers()) {
+                if (i == 0) {
+                    session.addNode(treeIndex, 0, 1, "users", session.i18n("text.tree.users"));
+                    treeIndex++;
+                }
+                session.addNode(treeIndex, 1, 1, "user", user.getName());
+                treeIndex++;
+                if (user.isAdmin()) {
+                    session.addNode(treeIndex, 2, 2, "type", session.i18n("text.tree.admin"));
+                    treeIndex++;
                 }
             }
-            DatabaseMetaData meta = session.getMetaData();
-            String version = meta.getDatabaseProductName() + " " + meta.getDatabaseProductVersion();
+
+            // for (int i = 0; rs.next(); i++) {
+            // if (i == 0) {
+            // session.addNode(treeIndex, 0, 1, "sequences", session.i18n("text.tree.sequences"));
+            // treeIndex++;
+            // }
+            // String name = rs.getString(1);
+            // String currentBase = rs.getString(2);
+            // String increment = rs.getString(3);
+            // session.addNode(treeIndex, 1, 1, "sequence", name);
+            // treeIndex++;
+            // session.addNode(treeIndex, 2, 2, "type",
+            // session.i18n("text.tree.current") + ": " + currentBase);
+            // treeIndex++;
+            // if (!"1".equals(increment)) {
+            // session.addNode(treeIndex, 2, 2, "type",
+            // session.i18n("text.tree.increment") + ": " + increment);
+            // treeIndex++;
+            // }
+            // }
+            String version = Utils.getReleaseVersionString();
             session.addNode(treeIndex, 0, 0, "info", version);
         } catch (Exception e) {
-            session.put("error", getStackTrace(0, e, isH2));
+            session.put("error", getStackTrace(0, e, session.isH2()));
         }
         JsonObject json = new JsonObject();
         json.put("tables", new JsonArray(session.tableList));
@@ -122,72 +87,41 @@ public class DatabaseService extends Service {
         return str;
     }
 
-    private int addTablesAndViews(DbSchema schema, boolean mainSchema, int treeIndex) throws SQLException {
+    private int addTablesAndViews(Schema schema, boolean mainSchema, int treeIndex) throws SQLException {
         if (schema == null) {
             return treeIndex;
         }
-        Connection conn = session.getConnection();
-        DatabaseMetaData meta = session.getMetaData();
         int level = mainSchema ? 0 : 1;
-        boolean showColumns = mainSchema || !schema.isSystem;
+        boolean showColumns = mainSchema;
         String indentation = ", " + level + ", " + (showColumns ? "1" : "2") + ", ";
         String indentNode = ", " + (level + 1) + ", 2, ";
-        DbTableOrView[] tables = schema.getTables();
+        ArrayList<Table> tables = schema.getAllTablesAndViews();
         if (tables == null) {
             return treeIndex;
         }
-        DbContents contents = schema.getContents();
-        boolean isOracle = contents.isOracle();
-        boolean notManyTables = tables.length < SysProperties.CONSOLE_MAX_TABLES_LIST_INDEXES;
-        try (PreparedStatement prep = showColumns ? prepareViewDefinitionQuery(conn, contents) : null) {
-            if (prep != null) {
-                prep.setString(1, schema.name);
+        for (Table table : tables) {
+            if (table instanceof TableView) {
+                continue;
             }
-            if (schema.isSystem) {
-                Arrays.sort(tables, SYSTEM_SCHEMA_COMPARATOR);
-                for (DbTableOrView table : tables) {
-                    treeIndex = addTableOrView(schema, mainSchema, treeIndex, meta, false, indentation, isOracle,
-                            notManyTables, table, table.isView(), prep, indentNode);
-                }
-            } else {
-                for (DbTableOrView table : tables) {
-                    if (table.isView()) {
-                        continue;
-                    }
-                    treeIndex = addTableOrView(schema, mainSchema, treeIndex, meta, showColumns, indentation, isOracle,
-                            notManyTables, table, false, null, indentNode);
-                }
-                for (DbTableOrView table : tables) {
-                    if (!table.isView()) {
-                        continue;
-                    }
-                    treeIndex = addTableOrView(schema, mainSchema, treeIndex, meta, showColumns, indentation, isOracle,
-                            notManyTables, table, true, prep, indentNode);
-                }
+            treeIndex = addTableOrView(schema, mainSchema, treeIndex, showColumns, indentation, table, false,
+                    indentNode);
+        }
+        for (Table table : tables) {
+            if (!(table instanceof TableView)) {
+                continue;
             }
+            treeIndex = addTableOrView(schema, mainSchema, treeIndex, showColumns, indentation, table, true,
+                    indentNode);
         }
         return treeIndex;
     }
 
-    private static PreparedStatement prepareViewDefinitionQuery(Connection conn, DbContents contents) {
-        if (contents.mayHaveStandardViews()) {
-            try {
-                return conn.prepareStatement("SELECT VIEW_DEFINITION FROM INFORMATION_SCHEMA.VIEWS"
-                        + " WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?");
-            } catch (SQLException e) {
-                contents.setMayHaveStandardViews(false);
-            }
-        }
-        return null;
-    }
-
-    private int addTableOrView(DbSchema schema, boolean mainSchema, int treeIndex, DatabaseMetaData meta,
-            boolean showColumns, String indentation, boolean isOracle, boolean notManyTables, DbTableOrView table,
-            boolean isView, PreparedStatement prep, String indentNode) throws SQLException {
+    private int addTableOrView(Schema schema, boolean mainSchema, int treeIndex, boolean showColumns,
+            String indentation, Table table, boolean isView, String indentNode) throws SQLException {
         int tableId = treeIndex;
-        String tab = table.getQuotedName();
+        String tab = table.getSQL();
         if (!mainSchema) {
-            tab = schema.quotedName + '.' + tab;
+            // tab = schema.getSQL() + '.' + tab;
         }
         tab = escapeIdentifier(tab);
         String[] a = indentation.split(",");
@@ -196,35 +130,18 @@ public class DatabaseService extends Service {
         treeIndex++;
         if (showColumns) {
             StringBuilder columnsBuilder = new StringBuilder();
-            treeIndex = addColumns(mainSchema, table, treeIndex, notManyTables, columnsBuilder);
-            if (isView) {
-                if (prep != null) {
-                    prep.setString(2, table.getName());
-                    try (ResultSet rs = prep.executeQuery()) {
-                        if (rs.next()) {
-                            String sql = rs.getString(1);
-                            if (sql != null) {
-                                a = indentNode.split(",");
-                                session.addNode(treeIndex, Integer.parseInt(a[1].trim()), Integer.parseInt(a[2].trim()),
-                                        "type", sql);
-                                treeIndex++;
-                            }
-                        }
-                    }
-                }
-            } else if (!isOracle && notManyTables) {
-                treeIndex = addIndexes(mainSchema, meta, table.getName(), schema.name, treeIndex);
-            }
+            treeIndex = addColumns(mainSchema, table, treeIndex, true, columnsBuilder);
+            // treeIndex = addIndexes(mainSchema, meta, table.getName(), schema.name, treeIndex);
             session.addTable(table.getName(), columnsBuilder.toString(), tableId);
         }
         return treeIndex;
     }
 
-    private int addColumns(boolean mainSchema, DbTableOrView table, int treeIndex, boolean showColumnTypes,
+    private int addColumns(boolean mainSchema, Table table, int treeIndex, boolean showColumnTypes,
             StringBuilder columnsBuilder) {
-        DbColumn[] columns = table.getColumns();
+        Column[] columns = table.getColumns();
         for (int i = 0; columns != null && i < columns.length; i++) {
-            DbColumn column = columns[i];
+            Column column = columns[i];
             if (columnsBuilder.length() > 0) {
                 columnsBuilder.append(' ');
             }
@@ -236,7 +153,7 @@ public class DatabaseService extends Service {
                     column.getName(), col);
             treeIndex++;
             if (mainSchema && showColumnTypes) {
-                session.addNode(treeIndex, 2, 2, "type", column.getDataType());
+                session.addNode(treeIndex, 2, 2, "type", column.getType() + "");
                 treeIndex++;
             }
         }
@@ -264,6 +181,7 @@ public class DatabaseService extends Service {
         String columns;
     }
 
+    @SuppressWarnings("unused")
     private int addIndexes(boolean mainSchema, DatabaseMetaData meta, String table, String schema, int treeIndex)
             throws SQLException {
         ResultSet rs;

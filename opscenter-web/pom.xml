@@ -35,10 +35,5 @@
             <artifactId>opscenter-service</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <dependency>
-            <groupId>io.vertx</groupId>
-            <artifactId>vertx-web</artifactId>
-            <version>4.1.5</version>
-        </dependency>
     </dependencies>
 </project>

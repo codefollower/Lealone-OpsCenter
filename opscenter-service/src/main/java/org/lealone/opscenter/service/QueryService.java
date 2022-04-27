@@ -32,7 +32,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Random;
 
-import org.h2.bnf.context.DbContents;
 import org.h2.command.Parser;
 import org.h2.engine.Constants;
 import org.h2.engine.SysProperties;
@@ -130,7 +129,7 @@ public class QueryService extends Service {
             result = buff.toString();
             session.put("result", result);
         } catch (Throwable e) {
-            session.put("result", getStackTrace(0, e, session.getContents().isH2()));
+            session.put("result", getStackTrace(0, e, session.isH2()));
         }
         if (!session.columnNames.isEmpty()) {
             JsonObject json = new JsonObject();
@@ -163,8 +162,7 @@ public class QueryService extends Service {
                         .append("").append("';</script>");
             }
             Statement stat;
-            DbContents contents = session.getContents();
-            if (forceEdit || (allowEdit && contents.isH2())) {
+            if (forceEdit || (allowEdit && session.isH2())) {
                 stat = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
             } else {
                 stat = conn.createStatement();
@@ -335,7 +333,7 @@ public class QueryService extends Service {
             return buff.toString();
         } catch (Throwable e) {
             // throwable: including OutOfMemoryError and so on
-            return getStackTrace(id, e, session.getContents().isH2());
+            return getStackTrace(id, e, session.isH2());
         } finally {
             session.executingStatement = null;
         }
@@ -448,10 +446,8 @@ public class QueryService extends Service {
         }
         boolean isUpdatable = false;
         try {
-            if (!session.getContents().isDB2()) {
-                isUpdatable = rs.getConcurrency() == ResultSet.CONCUR_UPDATABLE
-                        && rs.getType() != ResultSet.TYPE_FORWARD_ONLY;
-            }
+            isUpdatable = rs.getConcurrency() == ResultSet.CONCUR_UPDATABLE
+                    && rs.getType() != ResultSet.TYPE_FORWARD_ONLY;
         } catch (NullPointerException e) {
             // ignore
             // workaround for a JDBC-ODBC bridge problem
@@ -562,17 +558,12 @@ public class QueryService extends Service {
                         prep.setInt(j + 1, i);
                     }
                 }
-                if (session.getContents().isSQLite()) {
-                    // SQLite currently throws an exception on prep.execute()
-                    prep.executeUpdate();
-                } else {
-                    if (prep.execute()) {
-                        ResultSet rs = prep.getResultSet();
-                        while (!stop && rs.next()) {
-                            // maybe get the data as well
-                        }
-                        rs.close();
+                if (prep.execute()) {
+                    ResultSet rs = prep.getResultSet();
+                    while (!stop && rs.next()) {
+                        // maybe get the data as well
                     }
+                    rs.close();
                 }
             }
         }
@@ -679,7 +670,7 @@ public class QueryService extends Service {
                 // cancel
             }
         } catch (Throwable e) {
-            result = "<br />" + getStackTrace(0, e, session.getContents().isH2());
+            result = "<br />" + getStackTrace(0, e, session.isH2());
             error = formatAsError(e.getMessage());
         }
         String sql = "@edit " + (String) session.get("resultSetSQL");
@@ -721,7 +712,7 @@ public class QueryService extends Service {
             return;
         }
         int type = meta.getColumnType(columnIndex);
-        if (session.getContents().isH2()) {
+        if (session.isH2()) {
             rs.updateString(columnIndex, x);
             return;
         }

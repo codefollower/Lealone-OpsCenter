@@ -5,7 +5,7 @@
  */
 package org.lealone.opscenter.service;
 
-import org.h2.util.StringUtils;
+import org.lealone.common.util.StringUtils;
 
 /**
  * The connection info object is a wrapper for database connection information

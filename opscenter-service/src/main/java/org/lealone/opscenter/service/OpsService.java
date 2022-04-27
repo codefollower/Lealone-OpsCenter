@@ -31,8 +31,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 
-import org.h2.message.DbException;
-import org.h2.util.SortedProperties;
+import org.lealone.common.exceptions.DbException;
+import org.lealone.common.util.StringUtils;
+import org.lealone.db.session.ServerSession;
 
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -119,9 +120,11 @@ public class OpsService extends Service {
         prop.setProperty("user", user);
         prop.setProperty("password", password);
         try {
+            ServerSession serverSession = (ServerSession) new org.lealone.db.ConnectionInfo(url, prop).createSession();
             Connection conn = DriverManager.getConnection(url, prop);
             ServiceSession session = ServiceConfig.instance.createNewSession(null);
             session.setConnection(conn);
+            session.setServerSession(serverSession);
             session.put("url", url);
             return session.get("sessionId").toString();
         } catch (SQLException e) {
@@ -156,7 +159,7 @@ public class OpsService extends Service {
             instance.trace("translation: " + language);
             byte[] trans = instance.getFile("_text_" + language.toLowerCase() + ".prop");
             instance.trace("  " + new String(trans));
-            text = SortedProperties.fromLines(new String(trans, StandardCharsets.UTF_8));
+            text = fromLines(new String(trans, StandardCharsets.UTF_8));
             // remove starting # (if not translated yet)
             for (Entry<Object, Object> entry : text.entrySet()) {
                 String value = (String) entry.getValue();
@@ -172,6 +175,23 @@ public class OpsService extends Service {
         map.put("language", language);
         json.put("text", new JsonObject(map));
         return json.encode();
+    }
+
+    /**
+     * Convert a String to a map.
+     *
+     * @param s the string
+     * @return the map
+     */
+    public static Properties fromLines(String s) {
+        Properties p = new Properties();
+        for (String line : StringUtils.arraySplit(s, '\n', true)) {
+            int idx = line.indexOf('=');
+            if (idx > 0) {
+                p.put(line.substring(0, idx), line.substring(idx + 1));
+            }
+        }
+        return p;
     }
 
     public String testConnection() {

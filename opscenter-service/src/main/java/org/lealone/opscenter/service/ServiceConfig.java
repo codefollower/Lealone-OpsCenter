@@ -12,8 +12,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -33,9 +31,7 @@ import org.h2.message.DbException;
 import org.h2.security.SHA256;
 import org.h2.server.ShutdownHandler;
 import org.h2.store.fs.FileUtils;
-import org.h2.util.JdbcUtils;
 import org.h2.util.MathUtils;
-import org.h2.util.NetworkConnectionInfo;
 import org.h2.util.SortedProperties;
 import org.h2.util.StringUtils;
 import org.h2.util.Tool;
@@ -61,12 +57,12 @@ public class ServiceConfig {
 
     private static final String DEFAULT_LANGUAGE = "en";
 
-    private static final String[] GENERIC = {
-            "Generic H2 (Server)|org.h2.Driver|" + "jdbc:h2:tcp://localhost/~/test|sa",
-            "Generic H2 (Embedded)|org.h2.Driver|" + "jdbc:h2:~/test|sa",
+    private static final String[] GENERIC = { //
+            "Generic Lealone (Server)|org.lealone.client.jdbc.JdbcDriver|" //
+                    + "jdbc:lealone:tcp://127.0.0.1:9210/lealone|root", //
             // this will be listed on top for new installations
-            "Generic Lealone (Server)|org.lealone.client.jdbc.JdbcDriver|"
-                    + "jdbc:lealone:tcp://127.0.0.1:9210/lealone|root", };
+            "Generic Lealone (Embedded)|org.lealone.client.jdbc.JdbcDriver|" //
+                    + "jdbc:lealone:embed:lealone|root", };
 
     private static int ticker;
 
@@ -75,28 +71,6 @@ public class ServiceConfig {
      */
     private static final long SESSION_TIMEOUT = SysProperties.CONSOLE_TIMEOUT;
 
-    // public static void main(String... args) throws IOException {
-    // String s = IOUtils.readStringAndClose(new java.io.FileReader(
-    // // "src/main/org/h2/server/web/res/_text_cs.prop"), -1);
-    // "src/main/org/h2/res/_messages_cs.prop"), -1);
-    // System.out.println(StringUtils.javaEncode("..."));
-    // String[] list = Locale.getISOLanguages();
-    // for (int i = 0; i < list.length; i++) {
-    // System.out.print(list[i] + " ");
-    // }
-    // System.out.println();
-    // String l = "de";
-    // String lang = new java.util.Locale(l).
-    // getDisplayLanguage(new java.util.Locale(l));
-    // System.out.println(new java.util.Locale(l).getDisplayLanguage());
-    // System.out.println(lang);
-    // java.util.Locale.CHINESE.getDisplayLanguage(java.util.Locale.CHINESE);
-    // for (int i = 0; i < lang.length(); i++) {
-    // System.out.println(Integer.toHexString(lang.charAt(i)) + " ");
-    // }
-    // }
-
-    // private URLClassLoader urlClassLoader;
     private int port;
     private boolean allowOthers;
     private boolean ssl;
@@ -108,9 +82,7 @@ public class ServiceConfig {
     private final HashSet<String> languages = new HashSet<>();
     private String startDateTime;
     private ShutdownHandler shutdownHandler;
-    private boolean ifExists = true;
     private String key;
-    private boolean allowSecureCreation;
     private boolean trace;
     private TranslateThread translateThread;
     private boolean allowChunked = false;
@@ -222,16 +194,6 @@ public class ServiceConfig {
         }
     }
 
-    /**
-     * @param allowSecureCreation
-     *            whether creation of databases using the key should be allowed
-     */
-    public void setAllowSecureCreation(boolean allowSecureCreation) {
-        if (!allowOthers) {
-            this.allowSecureCreation = allowSecureCreation;
-        }
-    }
-
     public void init(String... args) {
         // set the serverPropertiesDir, because it's used in loadProperties()
         for (int i = 0; args != null && i < args.length; i++) {
@@ -256,10 +218,6 @@ public class ServiceConfig {
             } else if (Tool.isOption(a, "-baseDir")) {
                 String baseDir = args[++i];
                 SysProperties.setBaseDir(baseDir);
-            } else if (Tool.isOption(a, "-ifExists")) {
-                ifExists = true;
-            } else if (Tool.isOption(a, "-ifNotExists")) {
-                ifExists = false;
             } else if (Tool.isOption(a, "-webAdminPassword")) {
                 setAdminPassword(args[++i]);
             } else if (Tool.isOption(a, "-properties")) {
@@ -520,9 +478,9 @@ public class ServiceConfig {
      */
     synchronized ArrayList<ConnectionInfo> getSettings() {
         ArrayList<ConnectionInfo> settings = new ArrayList<>();
-        if (connInfoMap.size() == 0) {
+        if (connInfoMap.isEmpty()) {
             Properties prop = loadProperties();
-            if (prop.size() == 0) {
+            if (prop.isEmpty()) {
                 for (String gen : GENERIC) {
                     ConnectionInfo info = new ConnectionInfo(gen);
                     settings.add(info);
@@ -584,33 +542,6 @@ public class ServiceConfig {
         } catch (Exception e) {
             DbException.traceThrowable(e);
         }
-    }
-
-    /**
-     * Open a database connection.
-     *
-     * @param driver the driver class name
-     * @param databaseUrl the database URL
-     * @param user the user name
-     * @param password the password
-     * @param userKey the key of privileged user
-     * @param networkConnectionInfo the network connection information
-     * @return the database connection
-     */
-    Connection getConnection(String driver, String databaseUrl, String user, String password, String userKey,
-            NetworkConnectionInfo networkConnectionInfo) throws SQLException {
-        driver = driver.trim();
-        databaseUrl = databaseUrl.trim();
-        if (databaseUrl.startsWith("jdbc:h2:")) {
-            if (!allowSecureCreation || key == null || !key.equals(userKey)) {
-                if (ifExists) {
-                    databaseUrl += ";FORBID_CREATION=TRUE";
-                }
-            }
-        }
-        // do not trim the password, otherwise an
-        // encrypted H2 database with empty user password doesn't work
-        return JdbcUtils.getConnection(driver, databaseUrl, user.trim(), password, networkConnectionInfo);
     }
 
     /**

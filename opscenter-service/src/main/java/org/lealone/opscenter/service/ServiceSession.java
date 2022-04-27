@@ -6,7 +6,6 @@
 package org.lealone.opscenter.service;
 
 import java.sql.Connection;
-import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -15,10 +14,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 
-import org.h2.bnf.Bnf;
-import org.h2.bnf.context.DbContents;
-import org.h2.bnf.context.DbContextRule;
 import org.h2.message.DbException;
+import org.lealone.db.session.ServerSession;
 
 /**
  * The web session keeps all data of a user session.
@@ -65,10 +62,8 @@ class ServiceSession {
     final ArrayList<NodeInfo> nodeList = new ArrayList<>();
 
     private Connection conn;
-    private DatabaseMetaData meta;
-    private DbContents contents = new DbContents();
-    private Bnf bnf;
     private boolean shutdownServerOnDisconnect;
+    private ServerSession serverSession;
 
     ServiceSession(ServiceConfig server) {
         this.server = server;
@@ -80,6 +75,14 @@ class ServiceSession {
 
     void addTable(String name, String columns, int id) {
         tableList.add(new TableInfo(id, name, columns));
+    }
+
+    protected ServerSession getServerSession() {
+        return serverSession;
+    }
+
+    protected void setServerSession(ServerSession serverSession) {
+        this.serverSession = serverSession;
     }
 
     void addNode(int id, int level, int type, String icon, String text) {
@@ -129,43 +132,6 @@ class ServiceSession {
      */
     Object remove(String key) {
         return map.remove(key);
-    }
-
-    /**
-     * Get the BNF object.
-     *
-     * @return the BNF object
-     */
-    Bnf getBnf() {
-        return bnf;
-    }
-
-    /**
-     * Load the SQL grammar BNF.
-     */
-    void loadBnf() {
-        try {
-            Bnf newBnf = Bnf.getInstance(null);
-            DbContextRule columnRule = new DbContextRule(contents, DbContextRule.COLUMN);
-            DbContextRule newAliasRule = new DbContextRule(contents, DbContextRule.NEW_TABLE_ALIAS);
-            DbContextRule aliasRule = new DbContextRule(contents, DbContextRule.TABLE_ALIAS);
-            DbContextRule tableRule = new DbContextRule(contents, DbContextRule.TABLE);
-            DbContextRule schemaRule = new DbContextRule(contents, DbContextRule.SCHEMA);
-            DbContextRule columnAliasRule = new DbContextRule(contents, DbContextRule.COLUMN_ALIAS);
-            DbContextRule procedure = new DbContextRule(contents, DbContextRule.PROCEDURE);
-            newBnf.updateTopic("procedure", procedure);
-            newBnf.updateTopic("column_name", columnRule);
-            newBnf.updateTopic("new_table_alias", newAliasRule);
-            newBnf.updateTopic("table_alias", aliasRule);
-            newBnf.updateTopic("column_alias", columnAliasRule);
-            newBnf.updateTopic("table_name", tableRule);
-            newBnf.updateTopic("schema_name", schemaRule);
-            newBnf.linkStatements();
-            bnf = newBnf;
-        } catch (Exception e) {
-            // ok we don't have the bnf
-            server.traceError(e);
-        }
     }
 
     /**
@@ -235,24 +201,14 @@ class ServiceSession {
 
     void setConnection(Connection conn) throws SQLException {
         this.conn = conn;
-        if (conn == null) {
-            meta = null;
-        } else {
-            meta = conn.getMetaData();
-        }
-        contents = new DbContents();
-    }
-
-    DatabaseMetaData getMetaData() {
-        return meta;
     }
 
     Connection getConnection() {
         return conn;
     }
 
-    DbContents getContents() {
-        return contents;
+    public boolean isH2() {
+        return true;
     }
 
     /**
