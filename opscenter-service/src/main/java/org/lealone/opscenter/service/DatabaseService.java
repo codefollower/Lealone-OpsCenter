@@ -46,6 +46,7 @@ public class DatabaseService extends Service {
                     session.addNode(treeIndex, 0, 1, "users", session.i18n("text.tree.users"));
                     treeIndex++;
                 }
+                i++;
                 session.addNode(treeIndex, 1, 1, "user", user.getName());
                 treeIndex++;
                 if (user.isAdmin()) {
