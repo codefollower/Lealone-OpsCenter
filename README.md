@@ -1,3 +1,6 @@
+
+<b>此项目已经废弃，请用 [DBeaver](https://dbeaver.io/) 这类 JDBC UI 客户端访问 Lealone。</b>
+
 # Lealone-OpsCenter
 
 基于 Vue + Lealone 开发的 Lealone Ops Center，改编自 [H2 数据库的 Web Console](http://www.h2database.com/html/quickstart.html)
